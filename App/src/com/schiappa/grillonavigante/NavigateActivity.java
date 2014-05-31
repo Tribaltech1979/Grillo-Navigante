@@ -3,17 +3,20 @@ package com.schiappa.grillonavigante;
 
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.util.List;
 
-import android.location.Location;
-import android.location.LocationListener;
-import android.location.LocationManager;
-import android.os.Bundle;
+import com.schiappa.grillonavigante.KML.KmlManager;
+
 import android.app.Activity;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
+import android.os.Bundle;
 import android.view.Menu;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebChromeClient;
@@ -30,10 +33,12 @@ public class NavigateActivity extends Activity {
 	private static final String POINT_LONGITUDE_KEY = "POINT_LONGITUDE_KEY";
 	private static final String PROX_ALERT_INTENT = "com.schiappa.ProximityAlert";
 
+
 	private static final NumberFormat nf = new DecimalFormat("##.########");
 
 	private LocationManager locationManager;
-
+	private List<String> locationProviders;
+	private KmlManager kmlmanager;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -41,14 +46,18 @@ public class NavigateActivity extends Activity {
 		setContentView(R.layout.activity_navigate);
 		
 		locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+		
+		locationProviders = locationManager.getProviders(true);
 
 		locationManager.requestLocationUpdates(				
-				                        LocationManager.GPS_PROVIDER,			
+				                        LocationManager.NETWORK_PROVIDER,			
 				                        MINIMUM_TIME_BETWEEN_UPDATE,			
 				                        MINIMUM_DISTANCECHANGE_FOR_UPDATE,
 				                        new NavLocationListener()		
 				        );
 		
+		
+		kmlmanager = new KmlManager("map.kml",this);
 		
         WebView webView = (WebView)findViewById(R.id.webMapView);
         webView.getSettings().setJavaScriptEnabled(true);
@@ -72,7 +81,7 @@ public class NavigateActivity extends Activity {
 
         Location location =
 
-            locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+            locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
 
         if (location==null) {
 
@@ -127,27 +136,31 @@ public class NavigateActivity extends Activity {
 
     public void populateCoordinatesFromLastKnownLocation(String lat, String lon) {
 
-        Location location =
-
-            locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+        Location location = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
 
         if (location!=null) {
 
-            lat = nf.format(location.getLatitude());
+            lat.concat(nf.format(location.getLatitude()));
 
-            lon = nf.format(location.getLongitude());
+            lon.concat(nf.format(location.getLongitude()));
 
         }
 
     }
 
+    
+    
+    public Location populateCoordinatesFromLastKnownLocation() {
+
+        Location location = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+
+        return location;
+
+    }
+    
     private void saveCoordinatesInPreferences(float latitude, float longitude) {
 
-        SharedPreferences prefs =
-
-           this.getSharedPreferences(getClass().getSimpleName(),
-
-                           Context.MODE_PRIVATE);
+        SharedPreferences prefs = this.getSharedPreferences(getClass().getSimpleName(), Context.MODE_PRIVATE);
 
         SharedPreferences.Editor prefsEditor = prefs.edit();
 
@@ -177,15 +190,33 @@ public class NavigateActivity extends Activity {
 	public class mapNavigateJavaScriptInterface {
 		
 		Context mnContext ;
+		Location loc;
 		
 		mapNavigateJavaScriptInterface(Context c){
 			mnContext = c;		
 		}
 		
 		@JavascriptInterface
-		public void trova(String lat, String lon){
+		public void trova(){
 			
-			NavigateActivity.this.populateCoordinatesFromLastKnownLocation(lat, lon);
+			loc = NavigateActivity.this.populateCoordinatesFromLastKnownLocation();
+			
+		}
+		
+		@JavascriptInterface
+		public String getLat(){
+			
+			String lat = nf.format(loc.getLatitude());
+			return lat;
+			
+		}
+		
+		
+		@JavascriptInterface
+		public String getLon(){
+			
+			String lon = nf.format(loc.getLongitude());
+			return lon;
 			
 		}
 		
@@ -193,6 +224,13 @@ public class NavigateActivity extends Activity {
 		public void salva(){
 			
 			NavigateActivity.this.saveProximityAlertPoint();
+		}
+		
+		@JavascriptInterface
+		public void salvafile(String name, String descr, String Lat, String Lon){
+			
+			NavigateActivity.this.kmlmanager.addPlacemark(name,descr,Lat,Lon);
+			NavigateActivity.this.kmlmanager.SetKmlToFile();
 		}
 		
 	}

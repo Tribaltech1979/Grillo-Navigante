@@ -3,6 +3,7 @@
 	<name>GrilloNavigante</name>
 	<comment></comment>
 	<projects>
+		<project>javaapiforkml-master</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
