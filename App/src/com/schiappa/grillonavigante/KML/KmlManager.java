@@ -36,7 +36,7 @@ public class KmlManager {
 	List<Placemark> Placemarks;
 	
 	public String getFileName() {
-		return FileName;
+		return mncontext.getFilesDir().toString()+"/"+this.FileName;
 	}
 
 	public void setFileName(String fileName) {

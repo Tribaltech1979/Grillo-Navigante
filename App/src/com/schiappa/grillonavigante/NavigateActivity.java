@@ -39,6 +39,7 @@ public class NavigateActivity extends Activity {
 	private LocationManager locationManager;
 	private List<String> locationProviders;
 	private KmlManager kmlmanager;
+	private WebView webView;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -59,7 +60,7 @@ public class NavigateActivity extends Activity {
 		
 		kmlmanager = new KmlManager("map.kml",this);
 		
-        WebView webView = (WebView)findViewById(R.id.webMapView);
+        webView = (WebView)findViewById(R.id.webMapView);
         webView.getSettings().setJavaScriptEnabled(true);
         webView.addJavascriptInterface(new mapNavigateJavaScriptInterface(this), "GrilloNav");
         webView.setWebChromeClient(new WebChromeClient());
@@ -186,6 +187,15 @@ public class NavigateActivity extends Activity {
 
 }
 	
+    
+    public void MapView(){
+    	
+      //  webView = (WebView)findViewById(R.id.webMapView);
+       // webView.getSettings().setJavaScriptEnabled(true);
+       // webView.addJavascriptInterface(new mapNavigateJavaScriptInterface(this), "GrilloNav");
+        //webView.setWebChromeClient(new WebChromeClient());
+    	webView.loadUrl("file:///android_asset/www/gmaps.html");
+    }
 	
 	public class mapNavigateJavaScriptInterface {
 		
@@ -231,6 +241,18 @@ public class NavigateActivity extends Activity {
 			
 			NavigateActivity.this.kmlmanager.addPlacemark(name,descr,Lat,Lon);
 			NavigateActivity.this.kmlmanager.SetKmlToFile();
+		}
+		
+		@JavascriptInterface
+		public String getKmlFile(){
+			
+			return NavigateActivity.this.kmlmanager.getFileName();
+		}
+		
+		@JavascriptInterface
+		public void map(){
+			NavigateActivity.this.MapView();
+			
 		}
 		
 	}
